@@ -1,0 +1,52 @@
+#!/path/to/python
+
+from io import BytesIO
+import sys
+from requests import get, codes
+from csv import reader
+from gzip import GzipFile
+
+# Get METAR csv
+r = get("https://www.aviationweather.gov/adds/dataserver_current/current/metars.cache.csv.gz")
+
+if r.status_code != codes.ok:
+  print("Oops! Looks like something went wrong with the request.")
+
+# unzip file
+with GzipFile(fileobj=BytesIO(r.content), mode="r") as fh:
+
+  # Read into reader
+  reader = reader(fh.read().decode("utf-8").strip().split("\n"))
+
+  # Extract frontmatter and headers
+  frontmatter = []
+  nextRow = []
+  while len(nextRow) <= 1:
+    frontmatter.append(nextRow)
+    nextRow = next(reader)
+  headers = nextRow
+
+  def toDict(row):
+    metarDict = {}
+    i = 0
+    for h in headers:
+      metarDict[h] = row[i]
+      i = i + 1
+    return metarDict
+
+  station = sys.argv[1]
+  nextMetar = next(reader)
+  while nextMetar != None and nextMetar[1].lower() != station.lower():
+    nextMetar = next(reader, None)
+
+  if nextMetar == None:
+    print("I couldn't find that airport code. Try another searching for a different airport.")
+  else:
+    metar = toDict(nextMetar)
+    print(metar["raw_text"])
+
+    background = "\u001b[44m"
+    if "IFR" in metar["flight_category"]:
+      background = "\u001b[30;43m"
+
+    print(f"{station.upper()} flight conditions are {background} {metar['flight_category']} \u001b[0m")
