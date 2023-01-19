@@ -1,6 +1,6 @@
-# METAR
+# WX
 
-A python script that pulls the METAR data from aviationweather.gov and prints to the console the metar you are looking for and whether the airport is currently VFR or IFR.
+A python script that pulls weather data from aviationweather.gov and prints to the console the METAR or TAF you are looking for.
 
 ## Installation
 
@@ -13,11 +13,16 @@ This script can also be run as a regular python script by adding the `.py` exten
 
 ## Usage
 
-`metar <ICAO Code>` - Returns the metar for the specified airport. The code is case insensitive.
+`wx <MODE (METAR or TAF)> <ICAO Code>` - Returns the METAR or TAF for the specified airport. The code and mode are case insensitive.
 
 ### Example
-```
-$ metar kbos
-KBOS 081454Z 31019G26KT 10SM FEW060 FEW250 10/02 A3015 RMK AO2 PK WND 31031/1357 SLP209 T01000017 51013
+```zsh
+$ wx metar kbos
+KBOS 190454Z 28009KT 10SM CLR 06/01 A2989 RMK AO2 SLP121 T00560006 401110044
 KBOS flight conditions are  VFR
+```
+
+```zsh
+$ wx taf kbos
+KBOS 190540Z 1906/2012 29010KT P6SM SKC FM192000 19004KT P6SM VCSH OVC110 FM192300 13004KT 5SM -RA BR OVC030 FM200100 10007KT 2SM -RA BR OVC008 FM200700 05012G19KT 2SM -RA BR OVC008
 ```

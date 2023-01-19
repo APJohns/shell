@@ -1,0 +1,63 @@
+#!/usr/bin/python3
+
+from io import BytesIO
+import sys
+from requests import get, codes
+from csv import reader
+from gzip import GzipFile
+
+mode = sys.argv[1]
+station = sys.argv[2]
+
+if mode.lower() != 'metar' and mode.lower() != 'taf':
+  print("Specify METAR or TAF.")
+  sys.exit()
+
+metarURL = "https://www.aviationweather.gov/adds/dataserver_current/current/metars.cache.csv.gz"
+tafURL = "https://www.aviationweather.gov/adds/dataserver_current/current/tafs.cache.csv.gz"
+
+# Get METAR csv
+r = get(metarURL if mode.lower() == 'metar' else tafURL)
+
+if r.status_code != codes.ok:
+  print("Oops! Looks like something went wrong with the request.")
+  sys.exit()
+
+# unzip file
+with GzipFile(fileobj=BytesIO(r.content), mode="r") as fh:
+
+  # Read into reader
+  reader = reader(fh.read().decode("utf-8").strip().split("\n"))
+
+  # Extract frontmatter and headers
+  frontmatter = []
+  nextRow = []
+  while len(nextRow) <= 1:
+    frontmatter.append(nextRow)
+    nextRow = next(reader)
+  headers = nextRow
+
+  def toDict(row):
+    rowDict = {}
+    i = 0
+    for h in headers:
+      rowDict[h] = row[i]
+      i = i + 1
+    return rowDict
+
+  nextRow = next(reader)
+  while nextRow != None and nextRow[1].lower() != station.lower():
+    nextRow = next(reader, None)
+
+  if nextRow == None:
+    print(f"I couldn't find {station.upper()}. Try another searching for a different airport.")
+  else:
+    entry = toDict(nextRow)
+    print(entry["raw_text"])
+
+    if (mode.lower() == 'metar'):
+      background = "\u001b[44m"
+      if "IFR" in entry["flight_category"]:
+        background = "\u001b[30;43m"
+
+      print(f"{station.upper()} flight conditions are {background} {entry['flight_category']} \u001b[0m")
